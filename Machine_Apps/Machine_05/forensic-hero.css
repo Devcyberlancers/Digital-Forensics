@@ -1,0 +1,64 @@
+/* Keep existing hero content and controls in front of a separate art area. */
+#briefing .hero, #briefing .section-hero { position: relative; isolation: isolate; overflow: hidden; }
+#briefing .hero::before, #briefing .section-hero::before { pointer-events: none; }
+#briefing .hero::after, #briefing .section-hero::after {
+  content: ""; display: block; position: absolute;
+  top: 50%; right: 1%; bottom: auto; left: auto;
+  width: 48%; height: auto; aspect-ratio: 16 / 9; margin: 0; padding: 0;
+  border: 0; border-radius: 0;
+  background-color: transparent;
+  background-image: url('forensic-hero.png');
+  background-position: center; background-repeat: no-repeat; background-size: contain;
+  opacity: 1; transform: translateY(-50%); box-shadow: none; animation: none; mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse 72% 78% at 50% 50%, #000 35%, transparent 75%);
+  mask-image: radial-gradient(ellipse 72% 78% at 50% 50%, #000 35%, transparent 75%);
+  pointer-events: none; z-index: 0;
+}
+#briefing .hero > *, #briefing .section-hero > * { position: relative; z-index: 1; }
+/* Adapt the artwork's cyan lighting to each case's established accent. */
+body:not([data-machine]) #briefing .section-hero::after { filter: hue-rotate(165deg) saturate(1.15); }
+body[data-machine="03"] #briefing .hero::after { filter: hue-rotate(65deg) saturate(1.1); }
+body[data-machine="05"] #briefing .hero::after { filter: hue-rotate(-90deg) saturate(1.15); }
+body[data-machine="04"] #briefing .hero::after { filter: hue-rotate(-45deg) saturate(1.1); }
+body[data-machine="06"] #briefing .hero::after { filter: hue-rotate(40deg) saturate(1.25); }
+body[data-machine="07"] #briefing .hero::after { filter: hue-rotate(75deg) saturate(.85); }
+body[data-machine="08"] #briefing .hero::after { filter: hue-rotate(-150deg) saturate(1.2); }
+body[data-machine="09"] #briefing .hero::after { filter: hue-rotate(145deg) saturate(1.15); }
+body[data-machine="10"] #briefing .hero::after { filter: hue-rotate(-125deg) saturate(1.2); }
+/* Keep near-neighbour machines visually distinct. */
+body[data-machine="04"] { --case-accent:#2dd4a0 !important; --cyan:#2dd4a0; }
+body[data-machine="06"] { --case-accent:#6385ff !important; --cyan:#6385ff; }
+.forensic-matrix {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  color: var(--case-accent, #e11d34); opacity: .24;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 85%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 85%, transparent);
+}
+.forensic-matrix-column {
+  position: absolute; top: -110%; left: calc(var(--column) * 4.25%);
+  display: flex; flex-direction: column; gap: 1.5rem;
+  color: inherit; font: 700 10px/1.2 Consolas, monospace; letter-spacing: .12em;
+  animation: forensic-matrix-fall var(--duration) linear var(--delay) infinite;
+}
+.forensic-matrix-column span:nth-child(3n) { opacity: .42; }
+@keyframes forensic-matrix-fall { to { transform: translateY(220vh); } }
+.section { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .forensic-matrix-column { animation: none; top: 2%; } }
+@media (min-width: 901px) {
+  body:not([data-machine]) #briefing.section { max-width: 1280px; padding-left: 2rem; padding-right: 2rem; }
+}
+@media (min-width: 901px) {
+  #briefing .hero, #briefing .section-hero {
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+    text-align: left; padding: 3rem 51% 3rem 3rem; min-height: 400px;
+  }
+  #briefing .hero .chips, #briefing .section-hero .hero-meta { justify-content: flex-start; }
+}
+@media (max-width: 900px) {
+  #briefing .hero, #briefing .section-hero { padding: 2rem 1.2rem 250px; }
+  #briefing .hero::after, #briefing .section-hero::after {
+    top: auto; right: auto; bottom: 8px; left: 50%;
+    width: min(100%, 410px); height: auto; aspect-ratio: 16 / 9;
+    transform: translateX(-50%); background-position: center; background-size: contain;
+  }
+}

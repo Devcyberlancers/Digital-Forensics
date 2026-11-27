@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine 01: The Deleted Evidence — Digital Forensics CTF</title>
+    <meta name="description" content="A beginner-level Digital Forensics CTF challenge. Recover deleted evidence from a forensic disk image using Autopsy.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>">
+<link rel="stylesheet" href="case-experience.css"><link rel="stylesheet" href="forensic-hero.css"></head>
+<body style="--case-accent:#e11d34;--case-surface:rgba(21,4,8,.88)">
+    <!-- Particles background -->
+    <canvas id="particles"></canvas>
+
+    <!-- Top Nav -->
+    <nav id="topnav">
+        <div class="nav-left">
+            <div class="nav-logo">
+                <span class="logo-icon">🔬</span>
+                <span class="logo-text">DF-CTF</span>
+                <span class="logo-divider">|</span>
+                <span class="logo-machine">Machine 01</span>
+            </div>
+        </div>
+        <div class="nav-center">
+            <button class="nav-tab active" data-section="briefing">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                Case Briefing
+            </button>
+            
+            <button class="nav-tab" data-section="questions">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Questions
+                <span class="badge" id="questionsCountBadge">0/10</span>
+            </button>
+            
+            <button class="nav-tab" data-section="walkthrough">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                Walkthrough
+            </button>
+        </div>
+        <div class="nav-right">
+            <div class="timer" id="timer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span id="timerDisplay">00:00:00</span>
+            </div>
+            <button class="reset-btn" onclick="resetMachine()" title="Reset timer, score, answers, and locked sections">
+                Reset
+            </button>
+            <div class="score-pill" id="scorePill">
+                <span class="score-label">Score</span>
+                <span class="score-value" id="scoreDisplay">0</span>
+                <span class="score-max">/100</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+
+        <!-- ===== SECTION: Case Briefing ===== -->
+        <section id="briefing" class="section active"><div class="section-hero">
+                <div class="hero-badge">CASE PC-DFIR-2026-0042</div>
+                <h1 class="hero-title">The Deleted Evidence</h1>
+                <p class="hero-subtitle">Machine 01 — Beginner Level Digital Forensics CTF</p>
+                <div class="hero-meta">
+                    <span class="meta-tag"><span class="meta-icon">⏱️</span> 45-60 min</span>
+                    <span class="meta-tag"><span class="meta-icon">🎯</span> 6 Flags</span>
+                    <span class="meta-tag"><span class="meta-icon">❓</span> 10 Questions</span>
+                    <span class="meta-tag"><span class="meta-icon">🛠️</span> Autopsy</span>
+                    <span class="meta-tag difficulty-beginner"><span class="meta-icon">⭐</span> Beginner</span>
+                </div>
+                <button class="btn-primary investigate-btn" onclick="startInvestigation()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Start Investigation
+                </button>
+            </div><div class="case-grid">
+<article class="case-card"><div class="case-kicker"><span class="case-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5m0 3v1"/></svg></span>Case context</div><h2>Incident Summary</h2><p>Missing files · employee departure</p><p>Pinnacle Corp discovers that client-campaign files have vanished from a marketing workstation after an employee leaves the business. The Recycle Bin is empty and some recent activity appears to have been cleared.</p><p>A preserved raw disk image is now the starting point. Recover the missing material and test whether the remaining traces support preparation, transfer and deliberate deletion.</p></article>
+<article class="case-card"><div class="case-kicker"><span class="case-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span>People and assets</div><h2>Suspect Profile</h2><div class="case-person"><div class="case-avatar">RS</div><div><strong>Riya Sharma</strong><span>Marketing analyst · person of interest</span></div></div><dl class="case-profile"><div><dt>Organisation</dt><dd>Pinnacle Corp</dd></div><div><dt>Workstation</dt><dd>WS-MKT-047</dd></div><div><dt>Account</dt><dd>riya.sharma</dd></div><div><dt>Status</dt><dd>Departed employee; attribution under review</dd></div></dl></article>
+<article class="case-card case-wide"><div class="case-kicker"><span class="case-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></span>Sequence to investigate</div><h2>Incident Timeline</h2><ol class="case-timeline"><li><span class="case-time">Mar 12</span><strong>Employment dispute</strong><p>A performance review precedes the employee’s departure.</p></li><li><span class="case-time">Mar 14</span><strong>After-hours activity</strong><p>The workstation is used after normal business hours.</p></li><li><span class="case-time">Mar 15</span><strong>Loss discovered</strong><p>The team reports missing campaign material and an emptied Recycle Bin.</p></li><li><span class="case-time">Preservation</span><strong>Disk image secured</strong><p>Investigators preserve the workstation before reassignment.</p></li></ol><p class="case-scope">Briefing milestones provide context. Establish exact event times and attribution from the supplied evidence.</p></article>
+<article class="case-card case-wide"><div class="case-kicker"><span class="case-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>Analyst objectives</div><h2>Your Missions</h2><ol class="case-missions"><li>Verify the disk image against the hash manifest.</li><li>Locate and recover the relevant deleted files.</li><li>Read document, spreadsheet and photograph evidence.</li><li>Correlate deletion records with the browser trail.</li><li>Separate observations from conclusions about intent.</li><li>Build an evidence-backed account of the missing material.</li></ol><p class="case-scope"><strong>Evidence scope:</strong> Raw FAT16 disk image, deleted directory entries, document/media content and browser artifacts.</p></article></div></section>
+
+        
+        
+
+        <!-- ===== SECTION: Questions ===== -->
+        <section id="questions" class="section">
+            <div class="section-header">
+                <h1>❓ Investigation Questions</h1>
+                <p>Answer all 10 questions. Flags are case-sensitive.</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    <span class="progress-text" id="progressText">0 / 10 completed</span>
+                </div>
+            </div>
+            <div class="student-next-steps">
+                <h2>Student Next Steps</h2>
+                <a class="download-evidence-btn" href="../../Evidence_Bundles/Machine_01_Student_Evidence_Files.zip" download>
+                    Download Evidence Files
+                </a>
+                <ol>
+                    <li>Open Autopsy and create a new case.</li>
+                    <li>Add <code>Evidence/Disk/pinnacle_ws047.img</code> as <strong>Disk Image or VM File</strong>.</li>
+                    <li>Run ingest, then confirm <strong>Deleted Files</strong> contains recoverable entries.</li>
+                    <li>Recover artifacts with <strong>Extract File(s)</strong> and use supporting tools.</li>
+                    <li>Record answers in <code>Questions/student_answer_log.md</code>.</li>
+                    <li>Submit the same answers in this Questions tab.</li>
+                </ol>
+            </div>
+            <div class="converter-card">
+                <h3>Chrome Timestamp Converter</h3>
+                <p class="muted">For Q9 and Q10: paste the raw Chrome <code>last_visit_time</code> value from Autopsy's <code>History</code> file, lower <code>Application &gt; urls</code> table. This converts it into IST using the timestamp helper.</p>
+                <div class="converter-row">
+                    <input id="chromeTimeInput" class="converter-input" type="text" value="13417971307000000" placeholder="Chrome timestamp">
+                    <button class="converter-btn" type="button" onclick="convertChromeTimestamp()">Convert to IST</button>
+                </div>
+                <div class="converter-output" id="chromeTimeOutput">IST: 2026-03-14 19:45:07</div>
+            </div>
+            <div class="questions-list" id="questionsList">
+                <!-- Questions are generated by JavaScript -->
+            </div>
+        </section>
+
+        
+        
+
+        <!-- ===== SECTION: Walkthrough ===== -->
+        <section id="walkthrough" class="section case-walkthrough"><h1>Complete Walkthrough</h1><p>Open the complete The Deleted Evidence PDF guide in the page reader.</p><div id="walkthroughLock" class="case-pdf-lock"><h2>Walkthrough</h2><p>The guide contains the complete investigation methods, expected findings and answers for this machine.</p><button id="walkthroughUnlock" class="case-action" type="button">Open PDF walkthrough</button><p id="walkthroughMessage" class="case-message" role="status" aria-live="polite"></p></div><div id="walkthroughContent" hidden style="display:none"><div class="case-pdf-toolbar"><div><strong>The Deleted Evidence · Complete walkthrough</strong><p>PDF reading view. Use the reader to scroll through every page.</p></div><button type="button" id="walkthroughRelock" class="case-action">Close walkthrough</button></div><div id="walkthroughViewer"></div></div></section>
+    </main>
+
+    <!-- File Preview Overlay -->
+    <div class="overlay" id="overlay" onclick="closePreview()"></div>
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-modal-header">
+            <span id="modalTitle">File Preview</span>
+            <button class="btn-close" onclick="closePreview()">✕</button>
+        </div>
+        <div class="preview-modal-body" id="modalBody"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+<script src="pdfjs-worker.js"></script><script src="pdfjs.js"></script><script src="pdf-reader.js"></script><script src="walkthrough.js"></script>
+<script src="forensic-matrix.js"></script></body>
+</html>

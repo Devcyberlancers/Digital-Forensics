@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>Vault Breach - Packet Reader</title><style>:root{color-scheme:dark;font:16px/1.6 Arial,sans-serif;background:#111006;color:#eee}*{box-sizing:border-box}body{max-width:1500px;margin:auto;padding:30px}h1,h2,summary{color:#facc15}h1{letter-spacing:-.04em}p{color:#d2cbb0}.panel,article{padding:20px;border:1px solid #facc1540;border-radius:14px;background:#201d10;margin:16px 0}input,button,select{font:inherit;background:#100f08;color:#eee;border:1px solid #facc1560;border-radius:7px;padding:10px;max-width:100%}input[type=search]{width:100%}button{cursor:pointer;background:#facc15;color:#171307;font-weight:bold}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 Consolas,monospace;background:#0b0a06;padding:16px;border-radius:8px}code{color:#fde68a;overflow-wrap:anywhere}.error{color:#fca5a5}small{color:#cfc5a4}label{display:block;margin:10px 0}textarea{display:block;width:100%;min-height:100px;background:#0b0a06;color:#eee;border:1px solid #9e8c39;border-radius:7px;padding:12px;font:14px monospace}a{color:#fde68a}:focus-visible{outline:3px solid #facc15;outline-offset:3px}@media(max-width:600px){body{padding:14px}article{padding:12px}}</style><body><h1>Packet Reader</h1><p>Offline parser for the supplied real PCAP. Recover exact HTTP bodies; compare records yourself. No network upload occurs. Wireshark is an independent alternative.</p><div class="panel"><label>Choose Evidence/Network/edge_capture.pcap <input id="file" type="file" accept=".pcap"></label><p id="source"></p><label>Search HTTP path, header, IP, request ID or body hash <input id="search" type="search" placeholder="Search capture"></label><p id="count">No capture loaded.</p><p id="error" class="error" role="alert"></p></div><div id="records"></div><script>
+function parsePcap(buffer){
+ const v=new DataView(buffer),u=new Uint8Array(buffer);if(u.length<24)throw Error('PCAP header is missing.');
+ const magic=v.getUint32(0,true);if(magic!==0xa1b2c3d4)throw Error('This reader supports little-endian classic microsecond PCAP, as supplied. Use Wireshark for other formats.');
+ if(v.getUint32(20,true)!==1)throw Error('Ethernet link type required.');
+ const flows=new Map();let pos=24,packets=0;
+ const ip=(p)=>[u[p],u[p+1],u[p+2],u[p+3]].join('.');
+ while(pos<u.length){
+  if(pos+16>u.length)throw Error('Truncated packet header.');const sec=v.getUint32(pos,true),micro=v.getUint32(pos+4,true),cap=v.getUint32(pos+8,true),wire=v.getUint32(pos+12,true);pos+=16;
+  if(cap!==wire||pos+cap>u.length)throw Error('Truncated captured packet; exact body recovery is unavailable.');packets++;
+  const end=pos+cap,start=pos;pos=end;if(cap<34||v.getUint16(start+12)!==0x0800)continue;
+  const p=start+14,ihl=(u[p]&15)*4,total=v.getUint16(p+2);if((u[p]>>4)!==4||ihl<20||p+total>end)throw Error('Invalid IPv4 packet.');
+  if(u[p+9]!==6)continue;if(v.getUint16(p+6)&0x3fff)throw Error('Fragmented IPv4 requires Wireshark.');
+  const t=p+ihl,sport=v.getUint16(t),dport=v.getUint16(t+2),seq=v.getUint32(t+4),thl=(u[t+12]>>4)*4;
+  if(thl<20||t+thl>p+total)throw Error('Invalid TCP header.');const payload=u.slice(t+thl,p+total);if(!payload.length)continue;
+  const src=ip(p+12),dst=ip(p+16),key=src+':'+sport+'>'+dst+':'+dport;
+  if(!flows.has(key))flows.set(key,{src,dst,sport,dport,segments:[],utc:sec+micro/1e6});
+  const f=flows.get(key);f.utc=Math.min(f.utc,sec+micro/1e6);f.segments.push({seq,bytes:payload});
+ }
+ const decode=new TextDecoder('utf-8',{fatal:false}),records=[];
+ for(const f of flows.values()){
+  f.segments.sort((a,b)=>a.seq-b.seq);const first=f.segments[0].seq;let cursor=first,chunks=[],length=0;
+  for(const s of f.segments){if(s.seq>cursor)throw Error('TCP sequence gap: cannot recover complete body.');const offset=Math.max(0,cursor-s.seq);if(offset<s.bytes.length){const x=s.bytes.slice(offset);chunks.push(x);length+=x.length;cursor=s.seq+s.bytes.length;}}
+  const data=new Uint8Array(length);let off=0;for(const c of chunks){data.set(c,off);off+=c.length;}
+  let sep=-1;for(let n=0;n+3<data.length;n++)if(data[n]===13&&data[n+1]===10&&data[n+2]===13&&data[n+3]===10){sep=n;break;}
+  if(sep<0)throw Error('HTTP header delimiter missing.');const raw=decode.decode(data.slice(0,sep)),lines=raw.split('\r\n'),firstline=lines.shift(),headers={};
+  for(const line of lines){const n=line.indexOf(':');if(n>0)headers[line.slice(0,n).toLowerCase()]=line.slice(n+1).trim();}
+  if(headers['transfer-encoding'])throw Error('Chunked transfer encoding requires Wireshark.');
+  if(!/^\d+$/.test(headers['content-length']||''))throw Error('Explicit Content-Length required.');
+  const count=Number(headers['content-length']);if(sep+4+count!==data.length)throw Error('Body length mismatch or multiple exchanges on one connection; use Wireshark.');
+  const request=/^(GET|POST|PUT|DELETE|HEAD|OPTIONS)\s+(\S+)\s+HTTP\/1\.[01]$/.exec(firstline),response=/^HTTP\/1\.[01]\s+(\d{3})/.exec(firstline);
+  if(!request&&!response)throw Error('Unsupported HTTP start line.');
+  records.push({...f,segments:undefined,kind:request?'request':'response',method:request?.[1]||'',path:request?.[2]||'',status:response?.[1]||'',firstline,rawHeaders:raw,headers,request_id:headers['x-request-id']||'',body:data.slice(sep+4),byteLength:count});
+ }
+ records.sort((a,b)=>a.utc-b.utc);return {packets,records};
+}
+
+const el=id=>document.getElementById(id);let records=[],objectUrls=[];
+const hex=buffer=>Array.from(new Uint8Array(buffer),b=>b.toString(16).padStart(2,'0')).join('');
+function render(){
+ for(const url of objectUrls)URL.revokeObjectURL(url);objectUrls=[];el('records').replaceChildren();const filter=el('search').value.toLowerCase();
+ const matches=records.filter(r=>[r.firstline,r.request_id,r.src,r.dst,r.rawHeaders,r.sha256].join(' ').toLowerCase().includes(filter));
+ el('count').textContent=matches.length+' matching HTTP messages / '+records.length+' total. Pair requests and responses by X-Request-ID.';
+ for(const r of matches){const a=document.createElement('article'),h=document.createElement('h2');h.textContent=r.firstline;a.append(h);
+  for(const text of [new Date(r.utc*1000).toISOString()+' · '+r.src+':'+r.sport+' → '+r.dst+':'+r.dport,'X-Request-ID: '+r.request_id,'Body bytes: '+r.byteLength,'Body SHA-256: '+r.sha256]){const p=document.createElement('p');p.textContent=text;a.append(p);}
+  const d=document.createElement('details'),s=document.createElement('summary');s.textContent='Headers and body preview';d.append(s);const pre=document.createElement('pre');
+  const type=r.headers['content-type']||'';pre.textContent=r.rawHeaders+'\n\n'+(type.includes('gzip')?'[Binary gzip body. Save body to examine exact bytes.]':new TextDecoder().decode(r.body.slice(0,5000)));d.append(pre);a.append(d);
+  const save=document.createElement('button');save.type='button';save.textContent='Save body';save.disabled=!r.body.length;save.onclick=()=>{const url=URL.createObjectURL(new Blob([r.body]));objectUrls.push(url);const link=document.createElement('a');const cd=r.headers['content-disposition']||'';const name=/filename="?([^";]+)/.exec(cd)?.[1]||r.kind+'-'+r.request_id+(type.includes('gzip')?'.tgz':'.bin');link.href=url;link.download=name.replace(/[^a-zA-Z0-9_.-]/g,'_');link.click();};a.append(save);el('records').append(a);
+ }
+}
+el('file').onchange=async e=>{el('error').textContent='';records=[];try{const file=e.target.files[0];if(!file)return;if(file.size>20*1024*1024)throw Error('Choose a PCAP below 20 MB.');const parsed=parsePcap(await file.arrayBuffer());records=parsed.records;for(const r of records)r.sha256=hex(await crypto.subtle.digest('SHA-256',r.body));el('source').textContent=file.name+' · '+parsed.packets+' captured packets. All displayed times are UTC.';render();}catch(error){el('error').textContent=error.message;el('records').replaceChildren();el('count').textContent='No usable capture loaded.';}};
+el('search').oninput=render;
+</script></body></html>

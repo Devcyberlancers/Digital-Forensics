@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07110f">
+  <meta name="description" content="Explore ten digital forensics investigations and download the evidence for each case.">
+  <title>DF-CTF | Digital Forensics Operations</title>
+  <link rel="icon" type="image/svg+xml" href="cybl-favicon.svg">
+  <link rel="stylesheet" href="portal.css">
+  <script src="portal.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#machines">Skip to investigations</a>
+  <div class="matrix" aria-hidden="true" id="matrix"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="DF-CTF home"><span class="brand-mark" aria-hidden="true"><img src="cybl-shield.jpeg" alt="" width="36" height="36"></span><span>DF<span class="brand-dash">-</span>CTF<small>DIGITAL FORENSICS</small></span></a>
+    <nav aria-label="Main navigation"><a href="#machines">Investigations</a><button type="button" class="nav-help" data-open-guide>How it works</button></nav>
+    <a class="top-action" href="#machines">Explore cases</a>
+  </header>
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span> DIGITAL FORENSICS OPERATIONS</p>
+        <h1 id="hero-title">Every trace<br>tells a <em>story.</em></h1>
+        <p class="lead">Step into the investigator’s seat. Explore ten forensic cases, follow the artifacts, and uncover what the evidence reveals.</p>
+        <div class="hero-actions"><a class="button button-primary" href="#machines">Explore investigations</a><button class="text-link" type="button" data-open-guide>How it works</button></div>
+        <div class="hero-facts"><div><strong>10</strong><span>Investigations</span></div><div><strong>100</strong><span>Questions across cases</span></div><div><strong>01</strong><span>Evidence bundle per case</span></div></div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
+        <div class="visual-scan"><div class="scan-top"><span>FORENSIC WORKSPACE</span><span>● ● ●</span></div><div class="scan-body"><div class="scan-icon">⌕</div><div><small>CASE MATERIAL</small><strong>Follow the evidence</strong><span>Preserve · Examine · Correlate</span></div></div><div class="scan-line"><span></span></div><div class="scan-foot"><span>DISK</span><span>NETWORK</span><span>MEMORY</span></div></div>
+        <span class="visual-label label-a">EVIDENCE / INTEGRITY</span><span class="visual-label label-b">ARTIFACT / ANALYSIS</span>
+      </div>
+    </section>
+    <section id="how-it-works" class="workflow" aria-labelledby="workflow-title">
+      <div class="workflow-intro"><p class="eyebrow">THE WORKFLOW</p><h2 id="workflow-title">Your investigation starts here.</h2></div>
+      <ol><li><span>01</span><div><strong>Choose a case</strong><p>Open a machine’s own investigation app.</p></div></li><li><span>02</span><div><strong>Download evidence</strong><p>Get only the bundle for the case you select.</p></div></li><li><span>03</span><div><strong>Investigate</strong><p>Use your forensic tools to analyze the artifacts.</p></div></li><li><span>04</span><div><strong>Submit findings</strong><p>Derive and submit answers in the machine app.</p></div></li></ol>
+    </section>
+    <section id="machines" class="catalogue" aria-labelledby="catalogue-title">
+      <div class="catalogue-head"><div><p class="eyebrow">CASE DIRECTORY / 01—10</p><h2 id="catalogue-title">Choose your investigation.</h2><p>Ten cases. Different evidence. One mission: follow the facts.</p></div><div class="directory-count"><strong id="shown-count">10</strong><span>cases shown</span></div></div>
+      <div class="filters"><label class="search"><span aria-hidden="true">⌕</span><span class="sr-only">Search investigations</span><input id="search" type="search" placeholder="Search machine number, name, or topic" autocomplete="off"></label><div class="filter-buttons" role="group" aria-label="Filter investigations"><button class="active" type="button" data-filter="all" aria-pressed="true">All cases</button><button type="button" data-filter="disk" aria-pressed="false">Disk &amp; files</button><button type="button" data-filter="network" aria-pressed="false">Network &amp; email</button><button type="button" data-filter="other" aria-pressed="false">More disciplines</button></div></div>
+      <p id="search-status" class="search-status" role="status" aria-live="polite"></p>
+      <div class="case-grid" id="case-grid"></div>
+      <p id="empty" class="empty" hidden>No investigations match your search. Try another term or filter.</p>
+      <noscript><p>JavaScript is needed to display the case directory. You can still open a machine directly from the <code>Machine_Apps</code> folder.</p></noscript>
+    </section>
+  </main>
+  <dialog id="guide-dialog" aria-labelledby="guide-title">
+    <div class="guide-header"><div><p class="eyebrow">YOUR INVESTIGATION GUIDE</p><h2 id="guide-title">How the machines work</h2></div><form method="dialog"><button class="guide-close" aria-label="Close instructions">×</button></form></div>
+    <p class="guide-intro">Each machine is a separate forensic case with its own WebApp and evidence. You only need the files for the case you choose.</p>
+    <ol class="guide-steps">
+      <li><strong>Choose a case.</strong> Search the directory by machine number, name or topic, then select <b>Open investigation</b>. Read the case briefing and questions.</li>
+      <li><strong>Download the evidence.</strong> Use the case's download button and extract its ZIP to your computer. A separate virtual-machine download is not required for the portal.</li>
+      <li><strong>Prepare your tools.</strong> Check that machine's tools guide and use the relevant tools, such as Autopsy or Wireshark. Tool availability and installation depend on your system.</li>
+      <li><strong>Preserve and investigate.</strong> Keep the original evidence unchanged, verify its hash when the case asks, and examine the artifacts to derive each finding.</li>
+      <li><strong>Submit and track.</strong> Enter answers in that machine's WebApp using its stated format. Progress may be stored in your current browser; clearing its data or resetting a case can remove it.</li>
+    </ol>
+    <p class="guide-note"><strong>Walkthroughs:</strong> The walkthrough tab is intended for authorized instructors and may require a password. Do not share instructor answers with students during an investigation.</p>
+    <form method="dialog"><button class="button button-primary" type="submit">Got it</button></form>
+  </dialog>
+  <footer><div class="footer-brand"><b>DF-CTF</b><span>Digital forensics challenge portal</span></div><p>Examine carefully. Draw conclusions from evidence.</p><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>
